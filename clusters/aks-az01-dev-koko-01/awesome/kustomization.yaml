@@ -1,0 +1,26 @@
+namespace: awesome
+
+resources:
+- ./namespaces.yaml
+- ./account
+- ./apigateway
+- ./bff
+- ./cart
+- ./order
+- ./payment
+- ./product
+- ./rabbitmq-consumer
+
+patches:
+- patch: |-
+    kind: not-important
+    metadata:
+      name: not-important
+    spec:
+      template:
+        spec:
+          tolerations:
+            - key: MGMT
+              operator: Exists
+  target:
+    kind: (Deployment)

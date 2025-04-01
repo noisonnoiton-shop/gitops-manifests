@@ -1,0 +1,59 @@
+spring:
+  application:
+    name: awesome-apigateway-service
+  cloud:
+    gateway:
+      routes:
+        - id: account-service
+          uri: http://awesome-account.awesome:8080
+          predicates:
+            - Path=/account/**
+          filters:
+            - StripPrefix=1
+        - id: cart-service
+          uri: http://awesome-cart.awesome:8080
+          predicates:
+            - Path=/cart/**
+          filters:
+            - StripPrefix=1
+        - id: order-service
+          uri: http://awesome-order.awesome:8080
+          predicates:
+            - Path=/order/**
+          filters:
+            - StripPrefix=1
+        - id: payment-service
+          uri: http://awesome-payment.awesome:8080
+          predicates:
+            - Path=/payment/**
+          filters:
+            - StripPrefix=1
+        - id: product-service
+          uri: http://awesome-product.awesome:8080
+          predicates:
+            - Path=/product/**
+          filters:
+            - StripPrefix=1
+
+springdoc:
+  enable-native-support: true
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui/index.html
+    config-url: /v3/api-docs/swagger-config
+    urls:
+      - url: /v3/api-docs
+        name: API Gateway Service
+        primaryName: API Gateway Service
+      - url: /account/v3/api-docs
+        name: Account
+      - url: /cart/v3/api-docs
+        name: Cart
+      - url: /order/v3/api-docs
+        name: Order
+      - url: /payment/v3/api-docs
+        name: Payment
+      - url: /product/v3/api-docs
+        name: Product

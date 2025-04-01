@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: awesome
+spec:
+  selector:
+    matchLabels:
+      app: awesome
+  template:
+    metadata:
+      labels:
+        app: awesome
+    spec:
+      containers:
+        - name: springboot
+          image: awesome
+          ports:
+            - containerPort: 8080

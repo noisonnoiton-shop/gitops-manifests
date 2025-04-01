@@ -1,0 +1,98 @@
+resources:
+- ../../../../base/awesome
+- ./ingress.yaml
+
+nameSuffix: "-bff"
+
+labels:
+- includeTemplates: true
+  pairs:
+    app: awesome-bff
+    env: prd
+    system: awesome
+
+images:
+- name: awesome
+  newName: noisonnoiton/awesome-bff
+  newTag: latest
+
+configMapGenerator:
+  - name: config
+    files:
+      - config/application.yml
+      - config/application-prd.yml
+
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    type: generated
+  annotations:
+    note: generated
+
+patches:
+- patch: |
+    kind: not-important
+    metadata:
+      name: awesome
+    spec:
+      template:
+        spec:
+          containers:
+            - name: springboot
+              env:
+                - name: JDK_JAVA_OPTIONS
+                  value: "-XX:+UseContainerSupport -javaagent:/app/bin/opentelemetry-javaagent.jar"
+                - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                  value: http://otel-apps.otel-collector:4318
+                - name: OTEL_SERVICE_NAME
+                  value: awesome-bff
+                - name: OTEL_RESOURCE_ATTRIBUTES
+                  value: "service.namespace=awesome"
+                - name: OTEL_INSTRUMENTATION_COMMON_DEFAULT_ENABLED
+                  value: 'true'
+                - name: OTEL_INSTRUMENTATION_SPRING_BOOT_ACTUATOR_AUTOCONFIGURE_ENABLED
+                  value: 'true'
+                - name: OTEL_INSTRUMENTATION_MICROMETER_ENABLED
+                  value: 'true'
+                - name: OTEL_INSTRUMENTATION_LOGBACK_ENABLED
+                  value: 'true'
+                - name: OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED
+                  value: 'false'
+              volumeMounts:
+                - name: config
+                  mountPath: "/config"
+                  readOnly: true
+          volumes:
+            - name: config
+              configMap:
+                name: config
+                items:
+                  - key: application.yml
+                    path: application.yml
+                  - key: application-prd.yml
+                    path: application-prd.yml
+  target:
+    kind: (Deployment)
+
+replacements:
+  - source:
+      kind: Deployment
+      fieldPath: metadata.name
+    targets:
+      - select:
+          kind: Deployment
+        fieldPaths:
+          - spec.selector.matchLabels.app
+          - spec.template.metadata.labels.app
+      - select:
+          kind: Service
+        fieldPaths:
+          - spec.selector.app
+  - source:
+      kind: ConfigMap
+      name: config
+    targets:
+      - select:
+          kind: Deployment
+        fieldPaths:
+          - "spec.template.spec.volumes.0.configMap.name"

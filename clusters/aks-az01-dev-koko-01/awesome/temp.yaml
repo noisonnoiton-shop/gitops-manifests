@@ -1,0 +1,1376 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: awesome
+---
+apiVersion: v1
+data:
+  application-prd.yml: "domain:\n  account:\n    name: account\n  accountBank:\n    name:
+    accountBank\n\nspring:\n  application:\n    name: awesome-account-service\n  session:\n
+    \   store-type: redis\n  data:\n    redis:\n      host: redis.awesome-infra.svc.cluster.local\n
+    \     port: 6379\n      ssl:\n        enabled: false\n  jpa:\n    hibernate:\n
+    \     ddl-auto: create\n    show-sql: true\n    defer-datasource-initialization:
+    true\n  datasource:\n    url: jdbc:mysql://mysql.awesome-infra.svc.cluster.local:3306/accounts?characterEncoding=UTF-8&createDatabaseIfNotExist=true\n
+    \   username: root\n    password: adminpass1!\n    driver-class-name: com.mysql.cj.jdbc.Driver\n
+    \ sql:\n    init:\n      platform: mysql\n      mode: always\n      data-locations:
+    file:/config/data-mysql.sql\n  h2:\n    console:\n      enabled: false\n  \n  rabbitmq:\n
+    \   addresses: rabbitmq.awesome-infra.svc.cluster.local\n    username: admin\n
+    \   password: adminpass1!\n    exchange:\n      account: accountTopic\n      accountBank:
+    accountBankTopic\n"
+  application.yml: "server:\n  port: 8080\n\nmybatis:\n  config-location: file:/config/mybatis-config-mysql.xml\n\nspring:\n
+    \ config:\n    import: \n      - file:/config/application-prd.yml\n\nlogging:\n
+    \ level:\n    org.springframework.boot: INFO\n    org.springframework.core : INFO\n\nmanagement:\n
+    \ endpoints:\n    web:\n      exposure:\n        include:\n        - \"*\"\n\nspringdoc:\n
+    \ api-docs:\n    path: /v3/api-docs\n  swagger-ui:\n    enabled: true\n"
+  data-mysql.sql: |-
+    --sequence
+    -- select next value for event_seq;
+    -- select next value for event_seq;
+    -- select next value for event_seq;
+    -- select next value for event_seq;
+    -- select next value for event_seq;
+    -- select next value for event_seq;
+
+    --account
+    INSERT INTO account
+    (id, username, name, password, mobile, address, scope, created_at)
+    VALUES
+    (1, 'a','a','asdfasdf11','01012345678','경기도 성남시 분당구','customer', NOW());
+
+    --account_events
+    INSERT INTO account_event
+    (id, domain, account_id, event_type, payload, tx_id, created_at)
+    VALUES
+    (1, 'account', 1, 'AccountCreated'
+    , '{"id": 1,"username": "a","name": "a","mobile": "01012345678","address": "경기도 성남시 분당구","scope": "customer"}'
+    , 'tx123123123'
+    , NOW());
+
+    INSERT INTO account_bank
+    (account_id,bank_name,bank_number,active,created_at)
+    VALUES
+    (1,'sc','123123123123','active',NOW());
+
+    INSERT INTO account_bank_event
+    (id,account_bank_id,domain,event_type,payload,tx_id,created_at)
+    VALUES
+    (1,1,'accountBank','AccountBankCreated'
+    ,'{"id":1,"accountId":1,"bankName":"sc","bankNumber":"123123123123","active":"active"}'
+    ,'tx123123127'
+    ,NOW());
+  mybatis-config-mysql.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+
+    <configuration>
+
+        <properties>
+            <property name="event-nextval" value="nextval(event_seq)" />
+        </properties>
+
+    </configuration>
+kind: ConfigMap
+metadata:
+  annotations:
+    note: generated
+  labels:
+    app: awesome-account
+    env: prd
+    system: awesome
+    type: generated
+  name: config-account
+  namespace: awesome
+---
+apiVersion: v1
+data:
+  application-prd.yml: |
+    spring:
+      application:
+        name: awesome-apigateway-service
+      cloud:
+        gateway:
+          routes:
+            - id: account-service
+              uri: http://awesome-account.awesome:8080
+              predicates:
+                - Path=/account/**
+              filters:
+                - StripPrefix=1
+            - id: cart-service
+              uri: http://awesome-cart.awesome:8080
+              predicates:
+                - Path=/cart/**
+              filters:
+                - StripPrefix=1
+            - id: order-service
+              uri: http://awesome-order.awesome:8080
+              predicates:
+                - Path=/order/**
+              filters:
+                - StripPrefix=1
+            - id: payment-service
+              uri: http://awesome-payment.awesome:8080
+              predicates:
+                - Path=/payment/**
+              filters:
+                - StripPrefix=1
+            - id: product-service
+              uri: http://awesome-product.awesome:8080
+              predicates:
+                - Path=/product/**
+              filters:
+                - StripPrefix=1
+
+    springdoc:
+      enable-native-support: true
+      api-docs:
+        enabled: true
+      swagger-ui:
+        enabled: true
+        path: /swagger-ui/index.html
+        config-url: /v3/api-docs/swagger-config
+        urls:
+          - url: /v3/api-docs
+            name: API Gateway Service
+            primaryName: API Gateway Service
+          - url: /account/v3/api-docs
+            name: Account
+          - url: /cart/v3/api-docs
+            name: Cart
+          - url: /order/v3/api-docs
+            name: Order
+          - url: /payment/v3/api-docs
+            name: Payment
+          - url: /product/v3/api-docs
+            name: Product
+  application.yml: "server:\n  port: 8080\n\nspring:\n  config:\n    import: \n      -
+    file:/config/application-prd.yml\n\nlogging:\n  level:\n    org.springframework.boot:
+    INFO\n    org.springframework.core : INFO\n\nmanagement:\n  endpoints:\n    web:\n
+    \     exposure:\n        include:\n        - \"*\"\n\nspringdoc:\n  api-docs:\n
+    \   path: /v3/api-docs\n  swagger-ui:\n    enabled: true\n"
+kind: ConfigMap
+metadata:
+  annotations:
+    note: generated
+  labels:
+    app: awesome-apigateway
+    env: prd
+    system: awesome
+    type: generated
+  name: config-apigateway
+  namespace: awesome
+---
+apiVersion: v1
+data:
+  application-prd.yml: |
+    spring:
+      application:
+        name: awesome-bff-service
+      thymeleaf:
+        prefix: classpath:/static/html/
+      session:
+        store-type: redis
+      data:
+        redis:
+          host: redis.awesome-infra.svc.cluster.local
+          port: 6379
+          ssl:
+            enabled: false
+
+    api:
+      account:
+        url: http://awesome-apigateway.awesome:8080/account
+      cart:
+        url: http://awesome-apigateway.awesome:8080/cart
+      order:
+        url: http://awesome-apigateway.awesome:8080/order
+      payment:
+        url: http://awesome-apigateway.awesome:8080/payment
+      product:
+        url: http://awesome-apigateway.awesome:8080/product
+  application.yml: "server:\n  port: 8080\n\nspring:\n  config:\n    import: \n      -
+    file:/config/application-prd.yml\n\nlogging:\n  level:\n    org.springframework.boot:
+    INFO\n    org.springframework.core : INFO\n\nmanagement:\n  endpoints:\n    web:\n
+    \     exposure:\n        include:\n        - \"*\"\n\nspringdoc:\n  api-docs:\n
+    \   path: /v3/api-docs\n  swagger-ui:\n    enabled: true\n"
+kind: ConfigMap
+metadata:
+  annotations:
+    note: generated
+  labels:
+    app: awesome-bff
+    env: prd
+    system: awesome
+    type: generated
+  name: config-bff
+  namespace: awesome
+---
+apiVersion: v1
+data:
+  application-prd.yml: "domain:\n  cart:\n    name: cart\n\nspring:\n  application:\n
+    \   name: awesome-cart-service\n  session:\n    store-type: redis\n  data:\n    redis:\n
+    \     host: redis.awesome-infra.svc.cluster.local\n      port: 6379\n      ssl:\n
+    \       enabled: false\n  jpa:\n    hibernate:\n      ddl-auto: create\n    show-sql:
+    true\n    defer-datasource-initialization: true\n  datasource:\n    url: jdbc:mysql://mysql.awesome-infra.svc.cluster.local:3306/carts?characterEncoding=UTF-8&createDatabaseIfNotExist=true\n
+    \   username: root\n    password: adminpass1!\n    driver-class-name: com.mysql.cj.jdbc.Driver\n
+    \ sql:\n    init:\n      platform: mysql\n      mode: always\n      data-locations:
+    file:/config/data-mysql.sql\n  h2:\n    console:\n      enabled: false\n  \n  rabbitmq:\n
+    \   addresses: rabbitmq.awesome-infra.svc.cluster.local\n    username: admin\n
+    \   password: adminpass1!\n    exchange:\n      cart: cartTopic\n"
+  application.yml: "server:\n  port: 8080\n\nmybatis:\n  config-location: file:/config/mybatis-config-mysql.xml\n\nspring:\n
+    \ config:\n    import: \n      - file:/config/application-prd.yml\n\nlogging:\n
+    \ level:\n    org.springframework.boot: INFO\n    org.springframework.core : INFO\n\nmanagement:\n
+    \ endpoints:\n    web:\n      exposure:\n        include:\n        - \"*\"\n\nspringdoc:\n
+    \ api-docs:\n    path: /v3/api-docs\n  swagger-ui:\n    enabled: true\n"
+  data-mysql.sql: |-
+    --sequence
+    -- select nextval(event_seq);
+
+    INSERT INTO cart
+    (account_id,product_id,product_active,product_quantity,product_info,created_at)
+    VALUES
+    (1
+    ,1
+    ,'active'
+    ,1
+    ,'{"id":1,"name":"Esprit Ruffle Shirt","categoryName":"women","amount":100,"originalPrice":80000,"salePercentage":5,"salePrice":4000,"resultPrice":76000,"img":"images/product-01.jpg"}'
+    ,NOW());
+
+    INSERT INTO cart_event
+    (id,cart_id,domain,event_type,payload,tx_id,created_at)
+    VALUES
+    (1,1,'cart','CartProductAdded'
+    ,'{"id":1,"accountId":1,"productId":1,"productActive":"active","productQuantity":1,"productInfo":{"id":1,"name":"Esprit Ruffle Shirt","categoryName":"women","amount":100,"originalPrice":80000,"salePercentage":5,"salePrice":4000,"resultPrice":76000,"img":"images/product-01.jpg"}}'
+    ,'tx123123124'
+    ,NOW());
+  mybatis-config-mysql.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+
+    <configuration>
+
+        <properties>
+            <property name="event-nextval" value="nextval(event_seq)" />
+        </properties>
+
+    </configuration>
+kind: ConfigMap
+metadata:
+  annotations:
+    note: generated
+  labels:
+    app: awesome-cart
+    env: prd
+    system: awesome
+    type: generated
+  name: config-cart
+  namespace: awesome
+---
+apiVersion: v1
+data:
+  application-prd.yml: "domain:\n  order:\n    name: order\n\nspring:\n  application:\n
+    \   name: awesome-order-service\n  session:\n    store-type: redis\n  data:\n
+    \   redis:\n      host: redis.awesome-infra.svc.cluster.local\n      port: 6379\n
+    \     ssl:\n        enabled: false\n  jpa:\n    hibernate:\n      ddl-auto: create\n
+    \   show-sql: true\n    defer-datasource-initialization: true\n  datasource:\n
+    \   url: jdbc:mysql://mysql.awesome-infra.svc.cluster.local:3306/order?characterEncoding=UTF-8&createDatabaseIfNotExist=true\n
+    \   username: root\n    password: adminpass1!\n    driver-class-name: com.mysql.cj.jdbc.Driver\n
+    \ sql:\n    init:\n      platform: mysql\n      mode: always\n      data-locations:
+    file:/config/data-mysql.sql\n  h2:\n    console:\n      enabled: false\n  \n  rabbitmq:\n
+    \   addresses: rabbitmq.awesome-infra.svc.cluster.local\n    username: admin\n
+    \   password: adminpass1!\n    exchange:\n      cart: cartTopic\n"
+  application.yml: "server:\n  port: 8080\n\nmybatis:\n  config-location: file:/config/mybatis-config-mysql.xml\n\nspring:\n
+    \ config:\n    import: \n      - file:/config/application-prd.yml\n\nlogging:\n
+    \ level:\n    org.springframework.boot: INFO\n    org.springframework.core : INFO\n\nmanagement:\n
+    \ endpoints:\n    web:\n      exposure:\n        include:\n        - \"*\"\n\nspringdoc:\n
+    \ api-docs:\n    path: /v3/api-docs\n  swagger-ui:\n    enabled: true\n"
+  data-mysql.sql: "--sequence\n-- select nextval(event_seq);\n-- select nextval(event_seq);\n--
+    select nextval(event_seq);\n-- select nextval(event_seq);\n-- select nextval(event_seq);\n--
+    select nextval(event_seq);\n-- select nextval(order_seq);\n\nINSERT INTO orders
+    \n(id, account_id, payment_id, account_info, products_info, payment_info, paid,
+    status, created_at)\nVALUES\n(1, 1, 1 \n, '{\n\t\"id\": 1\n\t, \"username\": \"lpeterson2a@google.co.uk\"\n\t,
+    \"name\": \"hi\"\n\t, \"mobile\": \"01012345678\"\n\t, \"address\": \"경기도 성남시
+    분당구\"\n\t, \"scope\": \"customer\"\n   }'\n, '[{ \n\t\"id\": 1\n  \t, \"name\":
+    \"Esprit Ruffle Shirt\"\n  \t, \"categoryName\": \"women\"\n  \t, \"active\":
+    \"active\"\n  \t, \"quantity\": 1\n  \t, \"amount\": 100\n  \t, \"originalPrice\":
+    80000\n  \t, \"salePercentage\": 5\n  \t, \"salePrice\": 4000\n  \t, \"resultPrice\":
+    76000\n  \t, \"img\": \"images/product-01.jpg\"\n   }]'\n, '{\"id\": 1, \"accountId\":
+    1, \"paymentMethod\": \"bank\", \"paymentDetail1\": \"kb\", \"paymentDetail2\":
+    \"123123123123\", \"paymentDetail3\": \"\",\"price\": 90000, \"paid\": \"paid\"}'\n,
+    'paid'\n, 'completed'\n, NOW());\n  \nINSERT INTO order_event\n(id, domain, order_id,
+    event_type, payload, tx_id, created_at)\nVALUES\n(1,'order',1, 'OrderCreated'\n,
+    '{\n\t\"id\": 1\n\t,\"accountId\": 1\n\t,\"paymentId\": 1\n\t, \"accountInfo\":
+    {\n\t\t\"id\": 1\n\t\t, \"username\": \"lpeterson2a@google.co.uk\"\n\t\t, \"name\":
+    \"hi\"\n\t\t, \"mobile\": \"01012345678\"\n\t\t, \"address\": \"경기도 성남시 분당구\"\n\t\t,
+    \"scope\": \"customer\"\n\t   }\n\t, \"productsInfo\": [{ \n\t\t\"id\": 1\n\t
+    \ \t, \"name\": \"Esprit Ruffle Shirt\"\n\t  \t, \"categoryName\": \"women\"\n\t
+    \ \t, \"active\": \"active\"\n\t  \t, \"quantity\": 1\n\t  \t, \"amount\": 100\n\t
+    \ \t, \"originalPrice\": 80000\n\t  \t, \"salePercentage\": 5\n\t  \t, \"salePrice\":
+    4000\n\t  \t, \"resultPrice\": 76000\n\t  \t, \"img\": \"images/product-01.jpg\"\n\t
+    \  }]\n\t, \"paymentInfo\": {\"id\": 1, \"accountId\": 1, \"paymentMethod\": \"bank\",
+    \"paymentDetail1\": \"kb\", \"paymentDetail2\": \"123123123123\", \"paymentDetail3\":
+    \"\",\"price\": 90000, \"paid\": \"paid\"}\n\t, \"paid\": \"paid\"\n\t, \"status\":
+    \"completed\"}'\n, 'tx123123129'\n, NOW());"
+  mybatis-config-mysql.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+
+    <configuration>
+
+        <properties>
+            <property name="event-nextval" value="nextval(event_seq)" />
+        </properties>
+
+    </configuration>
+kind: ConfigMap
+metadata:
+  annotations:
+    note: generated
+  labels:
+    app: awesome-order
+    env: prd
+    system: awesome
+    type: generated
+  name: config-order
+  namespace: awesome
+---
+apiVersion: v1
+data:
+  application-prd.yml: "domain:\n  payment:\n    name: payment\n\nspring:\n  application:\n
+    \   name: awesome-payment-service\n  session:\n    store-type: redis\n  data:\n
+    \   redis:\n      host: redis.awesome-infra.svc.cluster.local\n      port: 6379\n
+    \     ssl:\n        enabled: false\n  jpa:\n    hibernate:\n      ddl-auto: create\n
+    \   show-sql: true\n    defer-datasource-initialization: true\n  datasource:\n
+    \   url: jdbc:mysql://mysql.awesome-infra.svc.cluster.local:3306/payments?characterEncoding=UTF-8&createDatabaseIfNotExist=true\n
+    \   username: root\n    password: adminpass1!\n    driver-class-name: com.mysql.cj.jdbc.Driver\n
+    \ sql:\n    init:\n      platform: mysql\n      mode: always\n      data-locations:
+    file:/config/data-mysql.sql\n  h2:\n    console:\n      enabled: false\n  \n  rabbitmq:\n
+    \   addresses: rabbitmq.awesome-infra.svc.cluster.local\n    username: admin\n
+    \   password: adminpass1!\n    exchange:\n      payment: paymentTopic\n"
+  application.yml: "server:\n  port: 8080\n\nmybatis:\n  config-location: file:/config/mybatis-config-mysql.xml\n\nspring:\n
+    \ config:\n    import: \n      - file:/config/application-prd.yml\n\nlogging:\n
+    \ level:\n    org.springframework.boot: INFO\n    org.springframework.core : INFO\n\nmanagement:\n
+    \ endpoints:\n    web:\n      exposure:\n        include:\n        - \"*\"\n\nspringdoc:\n
+    \ api-docs:\n    path: /v3/api-docs\n  swagger-ui:\n    enabled: true\n"
+  data-mysql.sql: |-
+    --sequence
+    -- select nextval(event_seq);
+    -- select nextval(event_seq);
+    -- select nextval(event_seq);
+    -- select nextval(event_seq);
+    -- select nextval(event_seq);
+    -- select nextval(event_seq);
+
+    INSERT INTO payment
+    (account_id, order_id, payment_method, payment_detail1, payment_detail2, payment_detail3, price, paid, active, created_at)
+    VALUES
+    (1,1,'bank','kb','123123123123','',90000,'paid','active',NOW());
+
+    INSERT INTO payment_event
+    (id, payment_id, domain, event_type, payload, tx_id, created_at)
+    VALUES
+    (1,1,'payment','PaymentCreated'
+    ,'{"id":1,"accountId":1,"orderId":1,"paymentMethod":"bank","paymentDetail1":"kb","paymentDetail2":"123123123123","paymentDetail3":"","price":90000,"paid":"paid","active":"active"}'
+    ,'tx123123128'
+    ,NOW());
+  mybatis-config-mysql.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+
+    <configuration>
+
+        <properties>
+            <property name="event-nextval" value="nextval(event_seq)" />
+        </properties>
+
+    </configuration>
+kind: ConfigMap
+metadata:
+  annotations:
+    note: generated
+  labels:
+    app: awesome-payment
+    env: prd
+    system: awesome
+    type: generated
+  name: config-payment
+  namespace: awesome
+---
+apiVersion: v1
+data:
+  application-prd.yml: "domain:\n  category:\n    name: category\n  product:\n    name:
+    product\n\nspring:\n  application:\n    name: awesome-product-service\n  session:\n
+    \   store-type: redis\n  data:\n    redis:\n      host: redis.awesome-infra.svc.cluster.local\n
+    \     port: 6379\n      ssl:\n        enabled: false\n  jpa:\n    hibernate:\n
+    \     ddl-auto: create\n    show-sql: true\n    defer-datasource-initialization:
+    true\n  datasource:\n    url: jdbc:mysql://mysql.awesome-infra.svc.cluster.local:3306/products?characterEncoding=UTF-8&createDatabaseIfNotExist=true\n
+    \   username: root\n    password: adminpass1!\n    driver-class-name: com.mysql.cj.jdbc.Driver\n
+    \ sql:\n    init:\n      platform: mysql\n      mode: always\n      data-locations:
+    file:/config/data-mysql.sql\n  h2:\n    console:\n      enabled: false\n  \n  rabbitmq:\n
+    \   addresses: rabbitmq.awesome-infra.svc.cluster.local\n    username: admin\n
+    \   password: adminpass1!\n    exchange:\n      category: categoryTopic\n      product:
+    productTopic\n"
+  application.yml: "server:\n  port: 8080\n\nmybatis:\n  config-location: file:/config/mybatis-config-mysql.xml\n\nspring:\n
+    \ config:\n    import: \n      - file:/config/application-prd.yml\n\nlogging:\n
+    \ level:\n    org.springframework.boot: INFO\n    org.springframework.core : INFO\n\nmanagement:\n
+    \ endpoints:\n    web:\n      exposure:\n        include:\n        - \"*\"\n\nspringdoc:\n
+    \ api-docs:\n    path: /v3/api-docs\n  swagger-ui:\n    enabled: true\n"
+  data-mysql.sql: "--sequence\n-- select nextval(event_seq);\n-- select nextval(event_seq);\n--
+    select nextval(event_seq);\n-- select nextval(event_seq);\n-- select nextval(event_seq);\n--
+    select nextval(event_seq);\n\nINSERT INTO product (name, category_id, active,
+    amount, original_price, sale_percentage, sale_price, result_price, img, created_at)
+    VALUES\n('Esprit Ruffle Shirt', 1, 'active', 100000, 80000, 5, 4000, 76000, 'images/product-01.jpg',
+    NOW());\nINSERT INTO product (name, category_id, active, amount, original_price,
+    sale_percentage, sale_price, result_price, img, created_at) VALUES\n('Herschel
+    supply', 1, 'active', 100000, 100000, 10, 10000, 90000, 'images/product-02.jpg',
+    NOW());\nINSERT INTO product (name, category_id, active, amount, original_price,
+    sale_percentage, sale_price, result_price, img, created_at) VALUES\n('Only Check
+    Trouser', 2, 'active', 100000, 80000, 5, 4000, 76000, 'images/product-03.jpg',
+    NOW());\nINSERT INTO product (name, category_id, active, amount, original_price,
+    sale_percentage, sale_price, result_price, img, created_at) VALUES\n('Classic
+    Trench Coat', 1, 'active', 100000, 200000, 20, 40000, 160000, 'images/product-04.jpg',
+    NOW());\nINSERT INTO product (name, category_id, active, amount, original_price,
+    sale_percentage, sale_price, result_price, img, created_at) VALUES\n('Front Pocket
+    Jumper', 1, 'active', 100000, 100000, 10, 10000, 90000, 'images/product-05.jpg',
+    NOW());\nINSERT INTO product (name, category_id, active, amount, original_price,
+    sale_percentage, sale_price, result_price, img, created_at) VALUES\n('Vintage
+    Inspired Classic', 5, 'active', 100000, 500000, 10, 50000, 450000, 'images/product-06.jpg',
+    NOW());\nINSERT INTO product (name, category_id, active, amount, original_price,
+    sale_percentage, sale_price, result_price, img, created_at) VALUES\n('Shirt in
+    Stretch Cotton', 1, 'active', 100000, 80000, 5, 4000, 76000, 'images/product-07.jpg',
+    NOW());\nINSERT INTO product (name, category_id, active, amount, original_price,
+    sale_percentage, sale_price, result_price, img, created_at) VALUES\n('Pieces Metallic
+    Printed', 1, 'active', 100000, 100000, 5, 5000, 95000, 'images/product-08.jpg',
+    NOW());\nINSERT INTO product (name, category_id, active, amount, original_price,
+    sale_percentage, sale_price, result_price, img, created_at) VALUES\n('Converse
+    All Star Hi Plimsolls', 4, 'active', 100000, 50000, 5, 2500, 47500, 'images/product-09.jpg',
+    NOW());\nINSERT INTO product (name, category_id, active, amount, original_price,
+    sale_percentage, sale_price, result_price, img, created_at) VALUES\n('Femme T-Shirt
+    In Stripe', 1, 'active', 100000, 80000, 5, 4000, 76000, 'images/product-10.jpg',
+    NOW());\nINSERT INTO product (name, category_id, active, amount, original_price,
+    sale_percentage, sale_price, result_price, img, created_at) VALUES\n('Herschel
+    supply', 2, 'active', 100000, 80000, 5, 4000, 76000, 'images/product-11.jpg',
+    NOW());\nINSERT INTO product (name, category_id, active, amount, original_price,
+    sale_percentage, sale_price, result_price, img, created_at) VALUES\n('Herschel
+    belt', 2, 'active', 100000, 80000, 10, 8000, 72000, 'images/product-12.jpg', NOW());\nINSERT
+    INTO product (name, category_id, active, amount, original_price, sale_percentage,
+    sale_price, result_price, img, created_at) VALUES\n('T-Shirt with Sleeve', 1,
+    'active', 100000, 100000, 10, 10000, 90000, 'images/product-13.jpg', NOW());\nINSERT
+    INTO product (name, category_id, active, amount, original_price, sale_percentage,
+    sale_price, result_price, img, created_at) VALUES\n('Pretty Little Thing', 1,
+    'active', 100000, 80000, 5, 4000, 76000, 'images/product-14.jpg', NOW());\nINSERT
+    INTO product (name, category_id, active, amount, original_price, sale_percentage,
+    sale_price, result_price, img, created_at) VALUES\n('Mini Silver Mesh Watch',
+    5, 'active', 100000, 1000000, 10, 100000, 900000, 'images/product-15.jpg', NOW());\nINSERT
+    INTO product (name, category_id, active, amount, original_price, sale_percentage,
+    sale_price, result_price, img, created_at) VALUES\n('Square Neck Back', 1, 'active',
+    100000, 100000, 10, 10000, 90000, 'images/product-16.jpg', NOW());\n\nINSERT INTO
+    product_event\n(id, product_id, domain, event_type, payload, tx_id, created_at)\nVALUES\n(1,1,'product'\n,
+    'ProductAmountAdded'\n, '{ \n\t\"id\": 1\n  \t, \"name\": \"Esprit Ruffle Shirt\"\n
+    \ \t, \"categoryName\": \"women\"\n  \t, \"active\": \"active\"\n  \t, \"amount\":
+    100\n  \t, \"originalPrice\": 80000\n  \t, \"salePercentage\": 5\n  \t, \"salePrice\":
+    4000\n  \t, \"resultPrice\": 76000\n  \t, \"img\": \"images/product-01.jpg\"\n
+    \  }'\n, 'tx123123125'\n, NOW());\n\nINSERT INTO category (name, priority, active,
+    created_at) VALUES\n('women', 1, 'active', NOW());\nINSERT INTO category (name,
+    priority, active, created_at) VALUES\n('men', 2, 'active', NOW());\nINSERT INTO
+    category (name, priority, active, created_at) VALUES\n('bag', 3, 'active', NOW());\nINSERT
+    INTO category (name, priority, active, created_at) VALUES\n('shoes', 4, 'active',
+    NOW());\nINSERT INTO category (name, priority, active, created_at) VALUES\n('watches',
+    5, 'active', NOW());\n  \nINSERT INTO category_event (id, category_id, domain,
+    event_type, payload, tx_id, created_at)\nVALUES\n(1,1,'product','CategoryCreated'\n,
+    '{\n\t\"id\": 1\n\t, \"name\": \"women\"\n\t, \"priority\": 1\n   }'\n, 'tx123123126'
+    \n, NOW());\nINSERT INTO category_event (id, category_id, domain, event_type,
+    payload, tx_id, created_at)\nVALUES\n(2,2,'product','CategoryCreated'\n, '{\n\t\"id\":
+    2\n\t, \"name\": \"men\"\n\t, \"priority\": 2\n   }'\n, 'tx123123126' \n, NOW());\nINSERT
+    INTO category_event (id, category_id, domain, event_type, payload, tx_id, created_at)\nVALUES\n(3,3,'product','CategoryCreated'\n,
+    '{\n\t\"id\": 3\n\t, \"name\": \"bag\"\n\t, \"priority\": 3\n   }'\n, 'tx123123126'
+    \n, NOW());\nINSERT INTO category_event (id, category_id, domain, event_type,
+    payload, tx_id, created_at)\nVALUES\n(4,4,'product','CategoryCreated'\n, '{\n\t\"id\":
+    4\n\t, \"name\": \"shoes\"\n\t, \"priority\": 4\n   }'\n, 'tx123123126' \n, NOW());\nINSERT
+    INTO category_event (id, category_id, domain, event_type, payload, tx_id, created_at)\nVALUES\n(5,5,'product','CategoryCreated'\n,
+    '{\n\t\"id\": 5\n\t, \"name\": \"watches\"\n\t, \"priority\": 5\n   }'\n, 'tx123123126'
+    \n, NOW());"
+  mybatis-config-mysql.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+
+    <configuration>
+
+        <properties>
+            <property name="event-nextval" value="nextval(event_seq)" />
+        </properties>
+
+    </configuration>
+kind: ConfigMap
+metadata:
+  annotations:
+    note: generated
+  labels:
+    app: awesome-product
+    env: prd
+    system: awesome
+    type: generated
+  name: config-product
+  namespace: awesome
+---
+apiVersion: v1
+data:
+  application-prd.yml: |
+    spring:
+      application:
+        name: awesome-rabbitmq-consumer-service
+
+      rabbitmq:
+        addresses: rabbitmq.awesome-infra.svc.cluster.local
+        username: admin
+        password: adminpass1!
+        listener:
+          simple:
+            retry:
+              enabled: true
+              max-attempts: 3
+
+      cloud:
+        function:
+          definition: accountCreated;productSoldOut;productAmountAdded;productAmountSubtractFailed;paymentCreateFailed;paymentPaid;paymentCreated;orderPaymentCanceled;orderPaymentCreated;orderProductCanceled;orderProductCreated;
+        stream:
+          bindings:
+            # account
+            accountCreated-in-0:
+              destination: accountTopic
+              group: account.accountCreated
+              content-type: application/json
+            # cart
+            productSoldOut-in-0:
+              destination: productTopic
+              group: cart.productSoldOut
+              content-type: application/json
+            productAmountAdded-in-0:
+              destination: productTopic
+              group: cart.productAmountAdded
+              content-type: application/json
+            # order
+            productAmountSubtractFailed-in-0:
+              destination: productTopic
+              group: order.productAmountSubtractFailed
+              content-type: application/json
+            paymentCreateFailed-in-0:
+              destination: paymentTopic
+              group: order.paymentCreateFailed
+              content-type: application/json
+            paymentPaid-in-0:
+              destination: paymentTopic
+              group: order.paymentPaid
+              content-type: application/json
+            paymentCreated-in-0:
+              destination: paymentTopic
+              group: order.paymentCreated
+              content-type: application/json
+            # payment
+            orderPaymentCanceled-in-0:
+              destination: orderTopic
+              group: payment.orderCanceled
+              content-type: application/json
+            orderPaymentCreated-in-0:
+              destination: orderTopic
+              group: payment.orderCreated
+              content-type: application/json
+            # product
+            orderProductCanceled-in-0:
+              destination: orderTopic
+              group: product.orderCanceled
+              content-type: application/json
+            orderProductCreated-in-0:
+              destination: orderTopic
+              group: product.orderCreated
+              content-type: application/json
+          rabbit:
+            bindings:
+              # account
+              accountCreated-in-0:
+                consumer:
+                  autoBindDlq: true
+                  bindingRoutingKey: account.AccountCreated.#
+              # cart
+              productSoldOut-in-0:
+                consumer:
+                  autoBindDlq: true
+                  bindingRoutingKey: product.ProductSoldOut.#
+              productAmountAdded-in-0:
+                consumer:
+                  autoBindDlq: true
+                  bindingRoutingKey: product.ProductAmountAdded.#
+              # order
+              productAmountSubtractFailed-in-0:
+                consumer:
+                  autoBindDlq: true
+                  bindingRoutingKey: product.ProductAmountSubtractFailed.#
+              paymentCreateFailed-in-0:
+                consumer:
+                  autoBindDlq: true
+                  bindingRoutingKey: payment.PaymentCreateFailed.#
+              paymentPaid-in-0:
+                consumer:
+                  autoBindDlq: true
+                  bindingRoutingKey: payment.PaymentPaid.#
+              paymentCreated-in-0:
+                consumer:
+                  autoBindDlq: true
+                  bindingRoutingKey: payment.PaymentCreated.#
+              # payment
+              orderPaymentCanceled-in-0:
+                consumer:
+                  autoBindDlq: true
+                  bindingRoutingKey: order.OrderCanceled.#
+              orderPaymentCreated-in-0:
+                consumer:
+                  autoBindDlq: true
+                  bindingRoutingKey: order.OrderCreated.#
+              # product
+              orderProductCanceled-in-0:
+                consumer:
+                  autoBindDlq: true
+                  bindingRoutingKey: order.OrderCanceled.#
+              orderProductCreated-in-0:
+                consumer:
+                  autoBindDlq: true
+                  bindingRoutingKey: order.OrderCreated.#
+
+    api:
+      account:
+        url: http://awesome-apigateway.awesome:8080/account
+      cart:
+        url: http://awesome-apigateway.awesome:8080/cart
+      order:
+        url: http://awesome-apigateway.awesome:8080/order
+      payment:
+        url: http://awesome-apigateway.awesome:8080/payment
+      product:
+        url: http://awesome-apigateway.awesome:8080/product
+  application.yml: "spring:\n  config:\n    import: \n      - file:/config/application-prd.yml\n\nlogging:\n
+    \ level:\n    org.springframework.boot: INFO\n    org.springframework.core : INFO\n\nmanagement:\n
+    \ endpoints:\n    web:\n      exposure:\n        include:\n        - \"*\"\n"
+kind: ConfigMap
+metadata:
+  annotations:
+    note: generated
+  labels:
+    app: awesome-rabbitmq-consumer
+    env: prd
+    system: awesome
+    type: generated
+  name: config-rabbitmq-consumer
+  namespace: awesome
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: awesome-account
+    env: prd
+    system: awesome
+  name: awesome-account
+  namespace: awesome
+spec:
+  ports:
+  - name: awesome
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: awesome-account
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: awesome-apigateway
+    env: prd
+    system: awesome
+  name: awesome-apigateway
+  namespace: awesome
+spec:
+  ports:
+  - name: awesome
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: awesome-apigateway
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: awesome-bff
+    env: prd
+    system: awesome
+  name: awesome-bff
+  namespace: awesome
+spec:
+  ports:
+  - name: awesome
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: awesome-bff
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: awesome-cart
+    env: prd
+    system: awesome
+  name: awesome-cart
+  namespace: awesome
+spec:
+  ports:
+  - name: awesome
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: awesome-cart
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: awesome-order
+    env: prd
+    system: awesome
+  name: awesome-order
+  namespace: awesome
+spec:
+  ports:
+  - name: awesome
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: awesome-order
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: awesome-payment
+    env: prd
+    system: awesome
+  name: awesome-payment
+  namespace: awesome
+spec:
+  ports:
+  - name: awesome
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: awesome-payment
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: awesome-product
+    env: prd
+    system: awesome
+  name: awesome-product
+  namespace: awesome
+spec:
+  ports:
+  - name: awesome
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: awesome-product
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: awesome-rabbitmq-consumer
+    env: prd
+    system: awesome
+  name: awesome-rabbitmq-consumer
+  namespace: awesome
+spec:
+  ports:
+  - name: awesome
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: awesome-rabbitmq-consumer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: awesome-account
+    env: prd
+    system: awesome
+  name: awesome-account
+  namespace: awesome
+spec:
+  selector:
+    matchLabels:
+      app: awesome-account
+  template:
+    metadata:
+      labels:
+        app: awesome-account
+        env: prd
+        system: awesome
+    spec:
+      containers:
+      - env:
+        - name: JDK_JAVA_OPTIONS
+          value: -XX:+UseContainerSupport -javaagent:/app/bin/opentelemetry-javaagent.jar
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://otel-apps.otel-collector:4318
+        - name: OTEL_SERVICE_NAME
+          value: awesome-account
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: service.namespace=awesome
+        - name: OTEL_INSTRUMENTATION_COMMON_DEFAULT_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_SPRING_BOOT_ACTUATOR_AUTOCONFIGURE_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_MICROMETER_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_LOGBACK_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED
+          value: "false"
+        - name: OTEL_INSTRUMENTATION_RABBITMQ_EXPERIMENTAL_SPAN_ATTRIBUTES
+          value: "true"
+        image: noisonnoiton/awesome-account:latest
+        name: springboot
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+      tolerations:
+      - key: MGMT
+        operator: Exists
+      volumes:
+      - configMap:
+          items:
+          - key: application.yml
+            path: application.yml
+          - key: application-prd.yml
+            path: application-prd.yml
+          - key: data-mysql.sql
+            path: data-mysql.sql
+          - key: mybatis-config-mysql.xml
+            path: mybatis-config-mysql.xml
+          name: config-account
+        name: config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: awesome-apigateway
+    env: prd
+    system: awesome
+  name: awesome-apigateway
+  namespace: awesome
+spec:
+  selector:
+    matchLabels:
+      app: awesome-apigateway
+  template:
+    metadata:
+      labels:
+        app: awesome-apigateway
+        env: prd
+        system: awesome
+    spec:
+      containers:
+      - env:
+        - name: JDK_JAVA_OPTIONS
+          value: -XX:+UseContainerSupport -javaagent:/app/bin/opentelemetry-javaagent.jar
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://otel-apps.otel-collector:4318
+        - name: OTEL_SERVICE_NAME
+          value: awesome-apigateway
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: service.namespace=awesome
+        - name: OTEL_INSTRUMENTATION_COMMON_DEFAULT_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_SPRING_BOOT_ACTUATOR_AUTOCONFIGURE_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_MICROMETER_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_LOGBACK_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED
+          value: "false"
+        image: noisonnoiton/awesome-apigateway:latest
+        name: springboot
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+      tolerations:
+      - key: MGMT
+        operator: Exists
+      volumes:
+      - configMap:
+          items:
+          - key: application.yml
+            path: application.yml
+          - key: application-prd.yml
+            path: application-prd.yml
+          name: config-apigateway
+        name: config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: awesome-bff
+    env: prd
+    system: awesome
+  name: awesome-bff
+  namespace: awesome
+spec:
+  selector:
+    matchLabels:
+      app: awesome-bff
+  template:
+    metadata:
+      labels:
+        app: awesome-bff
+        env: prd
+        system: awesome
+    spec:
+      containers:
+      - env:
+        - name: JDK_JAVA_OPTIONS
+          value: -XX:+UseContainerSupport -javaagent:/app/bin/opentelemetry-javaagent.jar
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://otel-apps.otel-collector:4318
+        - name: OTEL_SERVICE_NAME
+          value: awesome-bff
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: service.namespace=awesome
+        - name: OTEL_INSTRUMENTATION_COMMON_DEFAULT_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_SPRING_BOOT_ACTUATOR_AUTOCONFIGURE_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_MICROMETER_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_LOGBACK_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED
+          value: "false"
+        image: noisonnoiton/awesome-bff:latest
+        name: springboot
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+      tolerations:
+      - key: MGMT
+        operator: Exists
+      volumes:
+      - configMap:
+          items:
+          - key: application.yml
+            path: application.yml
+          - key: application-prd.yml
+            path: application-prd.yml
+          name: config-bff
+        name: config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: awesome-cart
+    env: prd
+    system: awesome
+  name: awesome-cart
+  namespace: awesome
+spec:
+  selector:
+    matchLabels:
+      app: awesome-cart
+  template:
+    metadata:
+      labels:
+        app: awesome-cart
+        env: prd
+        system: awesome
+    spec:
+      containers:
+      - env:
+        - name: JDK_JAVA_OPTIONS
+          value: -XX:+UseContainerSupport -javaagent:/app/bin/opentelemetry-javaagent.jar
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://otel-apps.otel-collector:4318
+        - name: OTEL_SERVICE_NAME
+          value: awesome-cart
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: service.namespace=awesome
+        - name: OTEL_INSTRUMENTATION_COMMON_DEFAULT_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_SPRING_BOOT_ACTUATOR_AUTOCONFIGURE_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_MICROMETER_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_LOGBACK_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED
+          value: "false"
+        - name: OTEL_INSTRUMENTATION_RABBITMQ_EXPERIMENTAL_SPAN_ATTRIBUTES
+          value: "true"
+        image: noisonnoiton/awesome-cart:latest
+        name: springboot
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+      tolerations:
+      - key: MGMT
+        operator: Exists
+      volumes:
+      - configMap:
+          items:
+          - key: application.yml
+            path: application.yml
+          - key: application-prd.yml
+            path: application-prd.yml
+          - key: data-mysql.sql
+            path: data-mysql.sql
+          - key: mybatis-config-mysql.xml
+            path: mybatis-config-mysql.xml
+          name: config-cart
+        name: config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: awesome-order
+    env: prd
+    system: awesome
+  name: awesome-order
+  namespace: awesome
+spec:
+  selector:
+    matchLabels:
+      app: awesome-order
+  template:
+    metadata:
+      labels:
+        app: awesome-order
+        env: prd
+        system: awesome
+    spec:
+      containers:
+      - env:
+        - name: JDK_JAVA_OPTIONS
+          value: -XX:+UseContainerSupport -javaagent:/app/bin/opentelemetry-javaagent.jar
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://otel-apps.otel-collector:4318
+        - name: OTEL_SERVICE_NAME
+          value: awesome-order
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: service.namespace=awesome
+        - name: OTEL_INSTRUMENTATION_COMMON_DEFAULT_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_SPRING_BOOT_ACTUATOR_AUTOCONFIGURE_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_MICROMETER_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_LOGBACK_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED
+          value: "false"
+        - name: OTEL_INSTRUMENTATION_RABBITMQ_EXPERIMENTAL_SPAN_ATTRIBUTES
+          value: "true"
+        image: noisonnoiton/awesome-order:latest
+        name: springboot
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+      tolerations:
+      - key: MGMT
+        operator: Exists
+      volumes:
+      - configMap:
+          items:
+          - key: application.yml
+            path: application.yml
+          - key: application-prd.yml
+            path: application-prd.yml
+          - key: data-mysql.sql
+            path: data-mysql.sql
+          - key: mybatis-config-mysql.xml
+            path: mybatis-config-mysql.xml
+          name: config-order
+        name: config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: awesome-payment
+    env: prd
+    system: awesome
+  name: awesome-payment
+  namespace: awesome
+spec:
+  selector:
+    matchLabels:
+      app: awesome-payment
+  template:
+    metadata:
+      labels:
+        app: awesome-payment
+        env: prd
+        system: awesome
+    spec:
+      containers:
+      - env:
+        - name: JDK_JAVA_OPTIONS
+          value: -XX:+UseContainerSupport -javaagent:/app/bin/opentelemetry-javaagent.jar
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://otel-apps.otel-collector:4318
+        - name: OTEL_SERVICE_NAME
+          value: awesome-payment
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: service.namespace=awesome
+        - name: OTEL_INSTRUMENTATION_COMMON_DEFAULT_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_SPRING_BOOT_ACTUATOR_AUTOCONFIGURE_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_MICROMETER_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_LOGBACK_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED
+          value: "false"
+        - name: OTEL_INSTRUMENTATION_RABBITMQ_EXPERIMENTAL_SPAN_ATTRIBUTES
+          value: "true"
+        image: noisonnoiton/awesome-payment:latest
+        name: springboot
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+      tolerations:
+      - key: MGMT
+        operator: Exists
+      volumes:
+      - configMap:
+          items:
+          - key: application.yml
+            path: application.yml
+          - key: application-prd.yml
+            path: application-prd.yml
+          - key: data-mysql.sql
+            path: data-mysql.sql
+          - key: mybatis-config-mysql.xml
+            path: mybatis-config-mysql.xml
+          name: config-payment
+        name: config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: awesome-product
+    env: prd
+    system: awesome
+  name: awesome-product
+  namespace: awesome
+spec:
+  selector:
+    matchLabels:
+      app: awesome-product
+  template:
+    metadata:
+      labels:
+        app: awesome-product
+        env: prd
+        system: awesome
+    spec:
+      containers:
+      - env:
+        - name: JDK_JAVA_OPTIONS
+          value: -XX:+UseContainerSupport -javaagent:/app/bin/opentelemetry-javaagent.jar
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://otel-apps.otel-collector:4318
+        - name: OTEL_SERVICE_NAME
+          value: awesome-product
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: service.namespace=awesome
+        - name: OTEL_INSTRUMENTATION_COMMON_DEFAULT_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_SPRING_BOOT_ACTUATOR_AUTOCONFIGURE_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_MICROMETER_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_LOGBACK_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED
+          value: "false"
+        - name: OTEL_INSTRUMENTATION_RABBITMQ_EXPERIMENTAL_SPAN_ATTRIBUTES
+          value: "true"
+        image: noisonnoiton/awesome-product:latest
+        name: springboot
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+      tolerations:
+      - key: MGMT
+        operator: Exists
+      volumes:
+      - configMap:
+          items:
+          - key: application.yml
+            path: application.yml
+          - key: application-prd.yml
+            path: application-prd.yml
+          - key: data-mysql.sql
+            path: data-mysql.sql
+          - key: mybatis-config-mysql.xml
+            path: mybatis-config-mysql.xml
+          name: config-product
+        name: config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: awesome-rabbitmq-consumer
+    env: prd
+    system: awesome
+  name: awesome-rabbitmq-consumer
+  namespace: awesome
+spec:
+  selector:
+    matchLabels:
+      app: awesome-rabbitmq-consumer
+  template:
+    metadata:
+      labels:
+        app: awesome-rabbitmq-consumer
+        env: prd
+        system: awesome
+    spec:
+      containers:
+      - env:
+        - name: JDK_JAVA_OPTIONS
+          value: -XX:+UseContainerSupport -javaagent:/app/bin/opentelemetry-javaagent.jar
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://otel-apps.otel-collector:4318
+        - name: OTEL_SERVICE_NAME
+          value: awesome-rabbitmq-consumer
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: service.namespace=awesome
+        - name: OTEL_INSTRUMENTATION_COMMON_DEFAULT_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_SPRING_BOOT_ACTUATOR_AUTOCONFIGURE_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_MICROMETER_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_LOGBACK_ENABLED
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED
+          value: "false"
+        - name: OTEL_INSTRUMENTATION_RABBITMQ_EXPERIMENTAL_SPAN_ATTRIBUTES
+          value: "true"
+        image: noisonnoiton/awesome-rabbitmq-consumer:latest
+        name: springboot
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+      tolerations:
+      - key: MGMT
+        operator: Exists
+      volumes:
+      - configMap:
+          items:
+          - key: application.yml
+            path: application.yml
+          - key: application-prd.yml
+            path: application-prd.yml
+          name: config-rabbitmq-consumer
+        name: config
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+  labels:
+    app: awesome-apigateway
+    env: prd
+    system: awesome
+  name: awesome-apigateway-apigateway
+  namespace: awesome
+spec:
+  ingressClassName: webapprouting.kubernetes.azure.com
+  rules:
+  - host: apigateway.awesome.kubepia.net
+    http:
+      paths:
+      - backend:
+          service:
+            name: awesome-apigateway
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+  labels:
+    app: awesome-bff
+    env: prd
+    system: awesome
+  name: awesome-bff-bff
+  namespace: awesome
+spec:
+  ingressClassName: webapprouting.kubernetes.azure.com
+  rules:
+  - host: awesome.kubepia.net
+    http:
+      paths:
+      - backend:
+          service:
+            name: awesome-bff
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix

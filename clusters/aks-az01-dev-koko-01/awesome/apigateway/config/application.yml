@@ -1,0 +1,25 @@
+server:
+  port: 8080
+
+spring:
+  config:
+    import: 
+      - file:/config/application-prd.yml
+
+logging:
+  level:
+    org.springframework.boot: INFO
+    org.springframework.core : INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+        - "*"
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true

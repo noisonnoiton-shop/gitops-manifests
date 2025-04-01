@@ -1,0 +1,40 @@
+domain:
+  order:
+    name: order
+
+spring:
+  application:
+    name: awesome-order-service
+  session:
+    store-type: redis
+  data:
+    redis:
+      host: redis.awesome-infra.svc.cluster.local
+      port: 6379
+      ssl:
+        enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    defer-datasource-initialization: true
+  datasource:
+    url: jdbc:mysql://mysql.awesome-infra.svc.cluster.local:3306/order?characterEncoding=UTF-8&createDatabaseIfNotExist=true
+    username: root
+    password: adminpass1!
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      platform: mysql
+      mode: always
+      data-locations: file:/config/data-mysql.sql
+  h2:
+    console:
+      enabled: false
+  
+  rabbitmq:
+    addresses: rabbitmq.awesome-infra.svc.cluster.local
+    username: admin
+    password: adminpass1!
+    exchange:
+      cart: cartTopic
