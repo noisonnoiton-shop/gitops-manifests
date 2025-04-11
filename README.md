@@ -1,90 +1,110 @@
-# GitOps Manifests Repository
+# GitOps 매니페스트 저장소
 
-GitOps 방식으로 Kubernetes 클러스터를 관리하기 위한 매니페스트 파일 저장소.
+이 저장소는 ArgoCD를 사용한 GitOps 원칙에 따라 Shop 마이크로서비스 애플리케이션을 배포하고 관리하기 위한 Kubernetes 매니페스트를 포함.
 
-## 개요
-
-Kubernetes 리소스를 선언적 방식으로 관리하며, ArgoCD를 통해 자동으로 클러스터에 배포. 모든 환경(개발, 스테이징, 프로덕션)에 대한 Kubernetes 매니페스트 포함.
-
-## 레포지토리 구조
+## 저장소 구조
 
 ```
 .
-├── base/                  # 기본 매니페스트 파일
-│   ├── account/          # Account 서비스 매니페스트
-│   ├── order/           # Order 서비스 매니페스트
-│   └── product/         # Product 서비스 매니페스트
-├── overlays/             # 환경별 설정 오버레이
-│   ├── dev/             # 개발 환경 설정
-│   ├── staging/         # 스테이징 환경 설정
-│   └── prod/            # 프로덕션 환경 설정
-└── argocd/              # ArgoCD 애플리케이션 정의
+├── base/                      # 기본 Kubernetes 매니페스트
+│   ├── awesome/              # 기본 애플리케이션 매니페스트
+│   │   ├── deployment.yaml
+│   │   ├── service.yaml
+│   │   └── kustomization.yaml
+│   └── awesome-infra/        # 인프라 컴포넌트
+│       ├── mysql/           # MySQL 데이터베이스
+│       ├── rabbitmq/        # RabbitMQ 메시지 브로커
+│       └── redis/          # Redis 캐시
+├── clusters/                 # 클러스터별 설정
+│   ├── aks-az01-dev-koko-01/ # Azure Kubernetes Service 클러스터
+│   │   ├── awesome/         # 애플리케이션 서비스
+│   │   │   ├── account/    # 계정 서비스
+│   │   │   ├── apigateway/ # API 게이트웨이
+│   │   │   ├── bff/        # 프론트엔드를 위한 백엔드
+│   │   │   ├── cart/       # 장바구니 서비스
+│   │   │   ├── order/      # 주문 서비스
+│   │   │   ├── payment/    # 결제 서비스
+│   │   │   ├── product/    # 상품 서비스
+│   │   │   └── rabbitmq-consumer/ # 메시지 소비자
+│   │   └── awesome-infra/   # 인프라 설정
+│   └── common/              # 공유 설정
+│       ├── shop/           # 공통 애플리케이션 설정
+│       └── shop-infra/     # 공통 인프라 설정
+└── docker-compose.yml       # 로컬 개발 환경 설정
 ```
 
-## 사용 방법
+## 컴포넌트
 
-### 사전 요구사항
+### 마이크로서비스
+- **계정 서비스**: 사용자 계정 관리
+- **API 게이트웨이**: 요청 라우팅 및 API 관리
+- **BFF (프론트엔드를 위한 백엔드)**: 클라이언트별 API 집계
+- **장바구니 서비스**: 장바구니 관리
+- **주문 서비스**: 주문 처리
+- **결제 서비스**: 결제 처리
+- **상품 서비스**: 상품 카탈로그 관리
+- **RabbitMQ 소비자**: 비동기 메시지 처리
 
+### 인프라
+- **MySQL**: 주 데이터베이스
+- **RabbitMQ**: 비동기 통신을 위한 메시지 브로커
+- **Redis**: 캐싱 및 세션 관리
+
+## 설정 관리
+
+### 디렉토리 구조
+- `base/`: 기본 Kubernetes 매니페스트 포함
+- `clusters/`: 환경별 설정
+  - `aks-az01-dev-koko-01/`: AKS 클러스터 설정
+  - `common/`: 클러스터 간 공유 설정
+
+### 설정 파일
+- `kustomization.yaml`: Kustomize 설정 파일
+- `application.yml`: 애플리케이션 속성
+- `application-prd.yml`: 운영 환경 특정 속성
+
+## 배포
+
+### 전제 조건
 - Kubernetes 클러스터
 - ArgoCD 설치
-- kubectl CLI 도구
-
-### 새로운 서비스 추가 절차
-
-1. `base` 디렉토리에 새로운 서비스 디렉토리 생성
-2. 기본 매니페스트 파일 작성 (deployment.yaml, service.yaml 등)
-3. 각 환경의 `overlays` 디렉토리에 환경별 설정 추가
-4. ArgoCD 애플리케이션 정의 추가
+- 컨테이너 레지스트리 접근 권한
 
 ### 배포 프로세스
+1. 저장소에 변경사항 커밋
+2. ArgoCD의 변경사항 감지
+3. 클러스터로의 자동 동기화
+4. 원하는 상태로의 애플리케이션 조정
 
-1. 매니페스트 변경사항 커밋
-2. ArgoCD 자동 감지 및 클러스터 적용
-3. ArgoCD UI에서 배포 상태 모니터링
+## 로컬 개발
 
-## 환경별 설정
+로컬 개발 시 `docker-compose.yml` 활용:
 
-### 개발 환경 (dev)
-- 낮은 리소스 제한
-- 디버그 모드 활성화
-- 자동 배포 구성
+```bash
+docker-compose up
+```
 
-### 스테이징 환경 (staging)
-- 프로덕션 유사 설정
-- 테스트 데이터 사용
-- 성능 테스트 환경 구성
+## 인프라 설정
 
-### 프로덕션 환경 (prod)
-- 고가용성 설정
-- 엄격한 리소스 제한
-- 수동 승인 프로세스
+`awesome-infra` 디렉토리 내 인프라 컴포넌트 관리:
+- 데이터베이스 설정
+- 메시지 브로커 설정
+- 캐시 설정
 
 ## 모니터링 및 로깅
 
-- Prometheus 메트릭 수집
-- Grafana 대시보드 시각화
-- EFK 스택 로그 관리
+각 서비스 디렉토리의 Kubernetes 매니페스트를 통한 모니터링 및 로깅 인프라 구성 가능.
 
-## 문제 해결 절차
+## 기여 방법
 
-1. ArgoCD UI 동기화 상태 확인
-2. kubectl 명령어로 리소스 상태 확인
-3. 애플리케이션 로그 확인
-
-## 기여 절차
-
-1. 새로운 브랜치 생성
-2. 변경사항 작성
-3. Pull Request 생성
-4. 코드 리뷰 진행
-5. main 브랜치 병합
+1. 새 브랜치 생성
+2. 변경사항 작업
+3. 풀 리퀘스트 제출
+4. CI 검사 통과 확인
+5. 관리자 승인 획득
 
 ## 보안
 
-- Sealed Secrets 기반 시크릿 관리
-- RBAC 정책 적용
-- 네트워크 정책 구성
-
-## 이슈 관리
-
-기능 요청 및 버그 리포트는 GitHub Issues를 통해 관리 
+- Kubernetes Secrets를 통한 민감 설정 관리
+- 환경별 설정 분리
+- RBAC를 통한 인프라 접근 제어
