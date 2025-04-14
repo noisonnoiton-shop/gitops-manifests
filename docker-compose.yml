@@ -17,3 +17,12 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+  mysql:
+    container_name: awesome-infra-mysql
+    image: mysql:8.0
+    platform: linux/amd64
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: adminpass1!
