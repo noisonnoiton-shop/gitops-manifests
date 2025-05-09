@@ -1,0 +1,11 @@
+/helm/temp/
+/helm/pulls/
+temp*.yaml
+diff*.yaml
+yaml.code-workspace
+/clusters/**/charts
+.VSCodeCounter
+.DS_Store
+
+.ghsecrets
+.ghvars
