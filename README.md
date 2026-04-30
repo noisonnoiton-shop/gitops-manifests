@@ -16,7 +16,7 @@
 │       ├── rabbitmq/        # RabbitMQ 메시지 브로커
 │       └── redis/          # Redis 캐시
 ├── clusters/                 # 클러스터별 설정
-│   ├── aks-az01-dev-koko-01/ # Azure Kubernetes Service 클러스터
+│   ├── az104-aks/ # Azure Kubernetes Service 클러스터
 │   │   ├── awesome/         # 애플리케이션 서비스
 │   │   │   ├── account/    # 계정 서비스
 │   │   │   ├── apigateway/ # API 게이트웨이
@@ -55,7 +55,7 @@
 ### 디렉토리 구조
 - `base/`: 기본 Kubernetes 매니페스트 포함
 - `clusters/`: 환경별 설정
-  - `aks-az01-dev-koko-01/`: AKS 클러스터 설정
+  - `az104-aks/`: AKS 클러스터 설정
   - `common/`: 클러스터 간 공유 설정
 
 ### 설정 파일
