@@ -13,7 +13,7 @@ labels:
 
 images:
 - name: awesome
-  newName: az104acrktds20260508.azurecr.io/awesome-bff
+  newName: acraz104ktds20260508.azurecr.io/awesome-bff
   newTag: latest
 
 configMapGenerator:
