@@ -13,7 +13,7 @@ labels:
 
 images:
 - name: awesome
-  newName: noisonnoiton/awesome-apigateway
+  newName: az104acrktds20260508.azurecr.io/awesome-apigateway
   newTag: latest
 
 configMapGenerator:

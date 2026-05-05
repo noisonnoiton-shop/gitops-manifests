@@ -12,7 +12,7 @@ labels:
 
 images:
 - name: awesome
-  newName: noisonnoiton/awesome-product
+  newName: az104acrktds20260508.azurecr.io/awesome-product
   newTag: latest
 
 configMapGenerator:

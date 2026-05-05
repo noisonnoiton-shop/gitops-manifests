@@ -12,7 +12,7 @@ labels:
 
 images:
 - name: awesome
-  newName: noisonnoiton/awesome-rabbitmq-consumer
+  newName: az104acrktds20260508.azurecr.io/awesome-rabbitmq-consumer
   newTag: latest
 
 configMapGenerator:
