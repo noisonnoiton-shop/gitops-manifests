@@ -13,7 +13,7 @@ labels:
 
 images:
 - name: awesome
-  newName: acraz104ktds20260508.azurecr.io/awesome-apigateway
+  newName: acraz104ktds20260522.azurecr.io/awesome-apigateway
   newTag: latest
 
 configMapGenerator:

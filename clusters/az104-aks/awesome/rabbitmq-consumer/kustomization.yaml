@@ -12,7 +12,7 @@ labels:
 
 images:
 - name: awesome
-  newName: acraz104ktds20260508.azurecr.io/awesome-rabbitmq-consumer
+  newName: acraz104ktds20260522.azurecr.io/awesome-rabbitmq-consumer
   newTag: latest
 
 configMapGenerator:
